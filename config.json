@@ -3,16 +3,16 @@
         "url": "ws://localhost:8080/"
     },
     "hitrate": [{
-        "end": 113,
-        "duration": 10
+        "end": 10,
+        "duration": 2
     },
     {
-        "end": 113,
-        "duration": 10
+        "end": 10,
+        "duration": 2
     },
     {
         "end": 0,
-        "duration": 10
+        "duration": 2
     }],
     "tests": [{
         "type": "message",

@@ -66,8 +66,12 @@ func (r *Runner) CompleteNotify() {
 			r.SocketDoneCount++
 			//fmt.Println("Test done for some socket", r.TotalCount, r.SocketDoneCount)
 			if r.SocketDoneCount >= r.TotalCount {
+
+				//Tell reporter that test is completed
+				Reporter.TestDoneChan <- true
+
 				//Notify that tests are completed & program can exit
-				r.TestDoneChan <- true
+				//r.TestDoneChan <- true
 				break
 			}
 		}
@@ -77,11 +81,10 @@ func (r *Runner) CompleteNotify() {
 //ErrorListener prints out errors
 func (r *Runner) ErrorListener() {
 
-	fmt.Println("Error listener started")
-
 	for {
 		select {
 		case err := <-r.ErrChan:
+			//Do something with err!
 			fmt.Println("Error encountered", err)
 		}
 	}

@@ -70,6 +70,7 @@ func CustomDialer(ctx context.Context, network, addr string) (net.Conn, error) {
 		statsRef.DNSResolutionTime = dnsDiff
 		if err != nil {
 			statsRef.Success = false
+			statsRef.ErrorString = err.Error()
 		} else {
 			statsRef.Success = true
 		}
@@ -99,6 +100,10 @@ func SocketRun(hostURL string, tests []models.Test, doneChan chan bool, errChan 
 	if err != nil {
 		errChan <- err
 		doneChan <- true
+
+		//In case of errors, we need to send the stats
+		reporterChan <- *socket.SocketStats
+
 		return
 	}
 
@@ -116,7 +121,7 @@ func (s *Socket) Connect(url string) error {
 	conn, _, err := s.Dialer.DialContext(s.Context, url, nil)
 	if err != nil {
 		//return err to the error channel
-		fmt.Println("Error in connection", err)
+		//fmt.Println("Error in connection", err)
 		return err
 	}
 

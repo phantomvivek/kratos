@@ -42,4 +42,5 @@ type SocketStats struct {
 	ConnectTime       time.Duration `json:"connecttime"`
 	Success           bool          `json:"success"`
 	DNSResolutionTime time.Duration `json:"dnstime"`
+	ErrorString       string        `json:"error"`
 }
