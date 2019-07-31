@@ -1,2 +1,6 @@
 # kratos
-Load testing tool for websockets, written in Go
+Load Testing Tool for Websockets, Written in Go
+
+## License
+
+See [LICENSE](LICENSE).
