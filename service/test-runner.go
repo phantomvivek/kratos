@@ -1,0 +1,175 @@
+package service
+
+import (
+	"fmt"
+	"math"
+	"time"
+
+	"github.com/kratos/config"
+	"github.com/kratos/models"
+)
+
+//Runner Handles all the running of tests & running config
+type Runner struct {
+	TestDoneChan    chan bool
+	SocketDoneChan  chan bool
+	SocketDoneCount int
+	TotalCount      int
+	ErrChan         chan error
+	HostURL         string
+	Tests           []models.Test
+	HitRates        []models.HitRate
+	Flows           []models.ConnectionBucket
+}
+
+//TestRunner singleton runner that will run tests
+var TestRunner Runner
+
+//Initialize initializes the runner with config and channels
+func (r *Runner) Initialize() {
+	TestRunner = Runner{
+		ErrChan:         make(chan error),
+		TestDoneChan:    make(chan bool, 1),
+		SocketDoneChan:  make(chan bool, 1),
+		TotalCount:      0,
+		SocketDoneCount: 0,
+		HostURL:         config.Config.Config.URL,
+		Tests:           config.Config.Tests,
+		HitRates:        config.Config.HitRates,
+	}
+}
+
+//Start starts the tests
+func (r *Runner) Start() {
+
+	//Prepare per second buckets to determine how many sockets are to be opened per second
+	r.PrepareBuckets()
+
+	//Start the error listener
+	go r.ErrorListener()
+
+	//Start listening to test completions
+	go r.CompleteNotify()
+
+	//Start the reporter
+	go Reporter.Start()
+
+	//Run tests!
+	r.RunTests()
+}
+
+//CompleteNotify is notified when a socket test completes
+func (r *Runner) CompleteNotify() {
+	for {
+		select {
+		case <-r.SocketDoneChan:
+			r.SocketDoneCount++
+			//fmt.Println("Test done for some socket", r.TotalCount, r.SocketDoneCount)
+			if r.SocketDoneCount >= r.TotalCount {
+				//Notify that tests are completed & program can exit
+				r.TestDoneChan <- true
+				break
+			}
+		}
+	}
+}
+
+//ErrorListener prints out errors
+func (r *Runner) ErrorListener() {
+
+	fmt.Println("Error listener started")
+
+	for {
+		select {
+		case err := <-r.ErrChan:
+			fmt.Println("Error encountered", err)
+		}
+	}
+}
+
+//PrepareBuckets prepares buckets per second of number of socket connections to open
+func (r *Runner) PrepareBuckets() {
+
+	totalDuration := 0
+	for _, rate := range r.HitRates {
+		totalDuration += rate.Duration
+	}
+
+	r.Flows = make([]models.ConnectionBucket, totalDuration)
+	counter := 0
+	var currConn float64
+
+	for _, rate := range r.HitRates {
+
+		incrPerSecond := (rate.EndConnections - currConn) / float64(rate.Duration)
+
+		for i := 0; i < rate.Duration; i++ {
+
+			currConn += incrPerSecond
+			count := int(math.Round(currConn))
+
+			//Add to the total count
+			r.TotalCount += count
+
+			flow := models.ConnectionBucket{
+				Count:       count,
+				IncrementBy: incrPerSecond,
+			}
+
+			r.Flows[counter] = flow
+			counter++
+		}
+	}
+
+	fmt.Println("Flow configuration set for sockets count:", r.TotalCount)
+}
+
+//RunTests runs the tests according to the flow
+func (r *Runner) RunTests() {
+
+	//We divide every 10 milliseconds for opening sockets. This can be made more granular
+	for _, flow := range r.Flows {
+
+		perTenMs := float64(flow.Count) / float64(100)
+		shave := math.Mod(perTenMs, 1.00)
+		perTenMs = math.Floor(perTenMs - shave)
+		shaveIncr := 0.00
+
+		//Round this to two decimals
+		shave = math.Round(shave/0.01) * 0.01
+
+		//Every 10 ms we will have multiple sockets to be opened
+		for count := 0; count < 100; count++ {
+
+			shaveIncr += shave
+			if shaveIncr > 1.00 {
+				//fmt.Println("Opening socket in shave condition!")
+				r.OpenSocket()
+				shaveIncr -= 1.00
+			}
+
+			for i := 0; i < int(perTenMs); i++ {
+
+				//Start a socket!
+				r.OpenSocket()
+				//fmt.Println("Opening socket!", i, perTenMs)
+			}
+
+			//Wait for 10ms
+			localTimer := time.NewTimer(10 * time.Millisecond)
+			<-localTimer.C
+		}
+
+		//Since shave incr is greater than 0.5, we need to open a socket. This value is mostly very close to 0.99
+		if shaveIncr > 0.5 {
+			r.OpenSocket()
+		}
+	}
+}
+
+//OpenSocket opens a socket.. this was repeated code
+func (r *Runner) OpenSocket() {
+
+	//Open a socket
+	go SocketRun(r.HostURL, r.Tests, r.SocketDoneChan, r.ErrChan, Reporter.ReportChan)
+}
