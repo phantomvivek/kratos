@@ -6,8 +6,6 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"github.com/kratos/config"
-
 	"github.com/influxdata/tdigest"
 
 	"github.com/kratos/models"
@@ -15,23 +13,12 @@ import (
 
 //StatsReporter is the struct that holds all test stats
 type StatsReporter struct {
-	TotalConnections        float64
-	TotalDuration           time.Duration
-	ConnectSuccess          float64
-	ConnectFailure          float64
-	ConnectTimeout          float64
-	ConnectLatencies        *tdigest.TDigest
-	ConnectLatencyMin       float64
-	ConnectLatencyMax       float64
-	DNSResolutionLatencies  *tdigest.TDigest
-	DNSResolutionLatencyMin float64
-	DNSResolutionLatencyMax float64
-	ReportChan              chan models.SocketStats
-	TestDoneChan            chan bool
-	ReportString            string
-	HitrateString           string
-	ErrorSet                map[string]int
-	TabWriter               *tabwriter.Writer
+	RateStats     map[int]*models.HitRateStats
+	ReportChan    chan models.SocketStats
+	TestDoneChan  chan bool
+	ReportString  string
+	HitrateString string
+	TabWriter     *tabwriter.Writer
 }
 
 //Reporter singleton object
@@ -39,19 +26,9 @@ var Reporter StatsReporter
 
 func init() {
 	Reporter = StatsReporter{
-		TotalConnections:        0.0,
-		ConnectSuccess:          0.0,
-		ConnectFailure:          0.0,
-		ConnectTimeout:          0.0,
-		ConnectLatencies:        tdigest.NewWithCompression(100),
-		DNSResolutionLatencies:  tdigest.NewWithCompression(100),
-		ReportChan:              make(chan models.SocketStats),
-		TestDoneChan:            make(chan bool),
-		ConnectLatencyMin:       0,
-		ConnectLatencyMax:       0,
-		DNSResolutionLatencyMin: 0,
-		DNSResolutionLatencyMax: 0,
-		ErrorSet:                make(map[string]int),
+		RateStats:    make(map[int]*models.HitRateStats),
+		ReportChan:   make(chan models.SocketStats),
+		TestDoneChan: make(chan bool),
 	}
 
 	Reporter.ReportString = "Connections\t[total]\t%v sockets\n" +
@@ -59,9 +36,30 @@ func init() {
 		"Connect Latency\t[min, p50, p95, p99, max]\t%s, %s, %s, %s, %s\n" +
 		"DNS Latency\t[min, p50, p95, p99, max]\t%s, %s, %s, %s, %s\n"
 
-	Reporter.HitrateString = "Hitrate Connection Parameters\tend=%v, duration=%vs\n"
+	Reporter.HitrateString = "Hitrate Connection Parameters\tstart=%v, end=%v, total=%v, duration=%vs\n"
 
 	Reporter.TabWriter = tabwriter.NewWriter(os.Stdout, 0, 8, 2, ' ', tabwriter.StripEscape)
+}
+
+//MakeHitRateStat makes a stat object based on the hitrate id
+func (r *StatsReporter) MakeHitRateStat(idx int, hitrate models.HitRate) {
+
+	hrStat := models.HitRateStats{
+		HitRateRef:              &hitrate,
+		TotalConnections:        0,
+		ConnectSuccess:          0.0,
+		ConnectFailure:          0.0,
+		ConnectTimeout:          0.0,
+		ConnectLatencies:        tdigest.NewWithCompression(100),
+		DNSResolutionLatencies:  tdigest.NewWithCompression(100),
+		ConnectLatencyMin:       0,
+		ConnectLatencyMax:       0,
+		DNSResolutionLatencyMin: 0,
+		DNSResolutionLatencyMax: 0,
+		ErrorSet:                make(map[string]int),
+	}
+
+	r.RateStats[idx] = &hrStat
 }
 
 //Start starts the reporter to listen to any metric data coming on channel
@@ -70,45 +68,55 @@ func (r *StatsReporter) Start() {
 	for {
 		select {
 		case metric := <-r.ReportChan:
-			r.TotalConnections++
+
+			//Use this hrStat for measurements
+			hrStat := r.RateStats[metric.HitrateIndex]
+
+			hrStat.TotalConnections++
 			if metric.Success {
-				r.ConnectSuccess++
+				hrStat.ConnectSuccess++
 			} else {
-				r.ConnectFailure++
+				hrStat.ConnectFailure++
 			}
 
-			if r.ConnectLatencyMin > float64(metric.ConnectTime) || r.ConnectLatencyMin == 0 {
-				r.ConnectLatencyMin = float64(metric.ConnectTime)
+			if hrStat.ConnectLatencyMin > float64(metric.ConnectTime) || hrStat.ConnectLatencyMin == 0 {
+				hrStat.ConnectLatencyMin = float64(metric.ConnectTime)
 			}
 
-			if r.ConnectLatencyMax < float64(metric.ConnectTime) {
-				r.ConnectLatencyMax = float64(metric.ConnectTime)
+			if hrStat.ConnectLatencyMax < float64(metric.ConnectTime) {
+				hrStat.ConnectLatencyMax = float64(metric.ConnectTime)
 			}
 
-			if r.DNSResolutionLatencyMin > float64(metric.DNSResolutionTime) || r.DNSResolutionLatencyMin == 0 {
-				r.DNSResolutionLatencyMin = float64(metric.DNSResolutionTime)
+			if hrStat.DNSResolutionLatencyMin > float64(metric.DNSResolutionTime) || hrStat.DNSResolutionLatencyMin == 0 {
+				hrStat.DNSResolutionLatencyMin = float64(metric.DNSResolutionTime)
 			}
 
-			if r.DNSResolutionLatencyMax < float64(metric.DNSResolutionTime) {
-				r.DNSResolutionLatencyMax = float64(metric.DNSResolutionTime)
+			if hrStat.DNSResolutionLatencyMax < float64(metric.DNSResolutionTime) {
+				hrStat.DNSResolutionLatencyMax = float64(metric.DNSResolutionTime)
 			}
 
-			r.ConnectLatencies.Add(float64(metric.ConnectTime), 1)
-			r.DNSResolutionLatencies.Add(float64(metric.DNSResolutionTime), 1)
+			hrStat.ConnectLatencies.Add(float64(metric.ConnectTime), 1)
+			hrStat.DNSResolutionLatencies.Add(float64(metric.DNSResolutionTime), 1)
 
 			if metric.ErrorString != "" {
-				if _, ok := r.ErrorSet[metric.ErrorString]; ok {
-					r.ErrorSet[metric.ErrorString]++
+				if _, ok := hrStat.ErrorSet[metric.ErrorString]; ok {
+					hrStat.ErrorSet[metric.ErrorString]++
 				} else {
-					r.ErrorSet[metric.ErrorString] = 1
+					hrStat.ErrorSet[metric.ErrorString] = 1
 				}
+			}
+
+			if hrStat.TotalConnections >= hrStat.HitRateRef.Connections {
+				//Report this hit rate as all connections for this hitrate have finished
+				r.LogHitrate(hrStat.HitRateRef)
+				r.Report(hrStat)
 			}
 
 		case <-r.TestDoneChan:
 			//Test done
 			fmt.Fprintln(Reporter.TabWriter, "All Tests Complete\tFinal Results Below:")
 
-			r.Report()
+			//Report all stats from all hitratestats
 
 			//Flush the tabwriter
 			Reporter.TabWriter.Flush()
@@ -124,24 +132,24 @@ func (r *StatsReporter) durationStr(dur float64) time.Duration {
 }
 
 //Report prints out the stats as they currently stand
-func (r *StatsReporter) Report() {
+func (r *StatsReporter) Report(hrStat *models.HitRateStats) {
 
 	//Reporting stats from the tests
 	if _, err := fmt.Fprintf(Reporter.TabWriter, r.ReportString,
-		r.TotalConnections,
-		r.ConnectSuccess, r.ConnectFailure, r.ConnectTimeout,
-		time.Duration(r.ConnectLatencyMin), r.durationStr(r.ConnectLatencies.Quantile(0.5)), r.durationStr(r.ConnectLatencies.Quantile(0.95)), r.durationStr(r.ConnectLatencies.Quantile(0.99)), time.Duration(r.ConnectLatencyMax),
-		time.Duration(r.DNSResolutionLatencyMin), r.durationStr(r.DNSResolutionLatencies.Quantile(0.5)), r.durationStr(r.DNSResolutionLatencies.Quantile(0.95)), r.durationStr(r.DNSResolutionLatencies.Quantile(0.99)), time.Duration(r.DNSResolutionLatencyMax),
+		hrStat.TotalConnections,
+		hrStat.ConnectSuccess, hrStat.ConnectFailure, hrStat.ConnectTimeout,
+		time.Duration(hrStat.ConnectLatencyMin), r.durationStr(hrStat.ConnectLatencies.Quantile(0.5)), r.durationStr(hrStat.ConnectLatencies.Quantile(0.95)), r.durationStr(hrStat.ConnectLatencies.Quantile(0.99)), time.Duration(hrStat.ConnectLatencyMax),
+		time.Duration(hrStat.DNSResolutionLatencyMin), r.durationStr(hrStat.DNSResolutionLatencies.Quantile(0.5)), r.durationStr(hrStat.DNSResolutionLatencies.Quantile(0.95)), r.durationStr(hrStat.DNSResolutionLatencies.Quantile(0.99)), time.Duration(hrStat.DNSResolutionLatencyMax),
 	); err != nil {
 		fmt.Println("Reporting error", err)
 	}
 
-	if len(r.ErrorSet) == 0 {
+	if len(hrStat.ErrorSet) == 0 {
 		if _, err := fmt.Fprintf(Reporter.TabWriter, "Error Set\t[error, count]\tNo Errors\n\n"); err != nil {
 			fmt.Println("Reporting error", err)
 		}
 	} else {
-		for errStr, count := range r.ErrorSet {
+		for errStr, count := range hrStat.ErrorSet {
 			if _, err := fmt.Fprintf(Reporter.TabWriter, "Error Set\t[error, count]\t%s, %v\n\n", errStr, count); err != nil {
 				fmt.Println("Reporting error", err)
 			}
@@ -153,16 +161,13 @@ func (r *StatsReporter) Report() {
 }
 
 //LogHitrate logs the current hitrate
-func (r *StatsReporter) LogHitrate(idx int) {
+func (r *StatsReporter) LogHitrate(hitrate *models.HitRate) {
 
-	if len(config.Config.HitRates) > idx {
-		hitrate := config.Config.HitRates[idx]
-		if _, err := fmt.Fprintf(Reporter.TabWriter, r.HitrateString, hitrate.EndConnections, hitrate.Duration); err != nil {
-			fmt.Println("Reporting error", err)
-			return
-		}
-
-		//Flush the tabwriter
-		Reporter.TabWriter.Flush()
+	if _, err := fmt.Fprintf(Reporter.TabWriter, r.HitrateString, hitrate.StartConnections, hitrate.EndConnections, hitrate.Connections, hitrate.Duration); err != nil {
+		fmt.Println("Reporting error", err)
+		return
 	}
+
+	//Flush the tabwriter
+	Reporter.TabWriter.Flush()
 }

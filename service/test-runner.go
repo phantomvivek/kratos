@@ -104,8 +104,13 @@ func (r *Runner) PrepareBuckets() {
 
 	for idx, rate := range r.HitRates {
 
-		incrPerSecond := (rate.EndConnections - currConn) / float64(rate.Duration)
+		//Used to count exactly how many connections will be made in this hitrate
+		hitrateCount := 0
 
+		//Start connections will be the current connection count
+		rate.StartConnections = currConn
+
+		incrPerSecond := (rate.EndConnections - currConn) / float64(rate.Duration)
 		for i := 0; i < rate.Duration; i++ {
 
 			currConn += incrPerSecond
@@ -113,6 +118,7 @@ func (r *Runner) PrepareBuckets() {
 
 			//Add to the total count
 			r.TotalCount += count
+			hitrateCount += count
 
 			flow := models.ConnectionBucket{
 				Idx:         idx,
@@ -123,9 +129,13 @@ func (r *Runner) PrepareBuckets() {
 			r.Flows[counter] = flow
 			counter++
 		}
-	}
 
-	fmt.Println("Flow configuration set for sockets count:", r.TotalCount)
+		//Save the number of connections this hitrate will have
+		rate.Connections = hitrateCount
+		Reporter.MakeHitRateStat(idx, rate)
+
+		//fmt.Printf("Config for hitrate:\tstart=%v, end=%v, total=%v, duration=%vs\n", rate.StartConnections, rate.EndConnections, rate.Connections, rate.Duration)
+	}
 }
 
 //RunTests runs the tests according to the flow
