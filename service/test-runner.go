@@ -102,7 +102,7 @@ func (r *Runner) PrepareBuckets() {
 	counter := 0
 	var currConn float64
 
-	for _, rate := range r.HitRates {
+	for idx, rate := range r.HitRates {
 
 		incrPerSecond := (rate.EndConnections - currConn) / float64(rate.Duration)
 
@@ -115,6 +115,7 @@ func (r *Runner) PrepareBuckets() {
 			r.TotalCount += count
 
 			flow := models.ConnectionBucket{
+				Idx:         idx,
 				Count:       count,
 				IncrementBy: incrPerSecond,
 			}
@@ -133,6 +134,12 @@ func (r *Runner) RunTests() {
 	//We divide every 10 milliseconds for opening sockets. This can be made more granular
 	for _, flow := range r.Flows {
 
+		/*
+			We calculate sockets to be opened per 10ms,
+			we shave off the decimal from the whole number, like if perTenMs is 1.12, shave is 0.12 and perTenMs becomes 1.00
+			We maintain shaveIncr, starting from 0.00, and keep adding shave to it. Once it reaches 1.00 or above, we open a socket
+			and reset shaveIncr to 0.00
+		*/
 		perTenMs := float64(flow.Count) / float64(100)
 		shave := math.Mod(perTenMs, 1.00)
 		perTenMs = math.Floor(perTenMs - shave)
@@ -147,14 +154,14 @@ func (r *Runner) RunTests() {
 			shaveIncr += shave
 			if shaveIncr > 1.00 {
 				//fmt.Println("Opening socket in shave condition!")
-				r.OpenSocket()
+				r.OpenSocket(flow.Idx)
 				shaveIncr -= 1.00
 			}
 
 			for i := 0; i < int(perTenMs); i++ {
 
 				//Start a socket!
-				r.OpenSocket()
+				r.OpenSocket(flow.Idx)
 				//fmt.Println("Opening socket!", i, perTenMs)
 			}
 
@@ -165,14 +172,14 @@ func (r *Runner) RunTests() {
 
 		//Since shave incr is greater than 0.5, we need to open a socket. This value is mostly very close to 0.99
 		if shaveIncr > 0.5 {
-			r.OpenSocket()
+			r.OpenSocket(flow.Idx)
 		}
 	}
 }
 
 //OpenSocket opens a socket.. this was repeated code
-func (r *Runner) OpenSocket() {
+func (r *Runner) OpenSocket(hitIdx int) {
 
 	//Open a socket
-	go SocketRun(r.HostURL, r.Tests, r.SocketDoneChan, r.ErrChan, Reporter.ReportChan)
+	go SocketRun(r.HostURL, r.Tests, r.SocketDoneChan, r.ErrChan, hitIdx, Reporter.ReportChan)
 }

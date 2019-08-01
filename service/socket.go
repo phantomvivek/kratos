@@ -84,14 +84,16 @@ func CustomDialer(ctx context.Context, network, addr string) (net.Conn, error) {
 }
 
 //SocketRun goroutine that makes a socket collection with the host and starts the tests
-func SocketRun(hostURL string, tests []models.Test, doneChan chan bool, errChan chan error, reporterChan chan models.SocketStats) {
+func SocketRun(hostURL string, tests []models.Test, doneChan chan bool, errChan chan error, hitIdx int, reporterChan chan models.SocketStats) {
 
 	socket := Socket{
 		Dialer: &websocket.Dialer{
 			HandshakeTimeout: 10 * time.Second,
 			NetDialContext:   CustomDialer,
 		},
-		SocketStats: &models.SocketStats{},
+		SocketStats: &models.SocketStats{
+			HitrateIndex: hitIdx,
+		},
 	}
 
 	socket.Context = context.WithValue(context.Background(), ContextKey("StatsRef"), socket.SocketStats)

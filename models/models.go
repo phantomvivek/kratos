@@ -33,12 +33,14 @@ type Test struct {
 
 //ConnectionBucket this has a per second count and incremented by previous second
 type ConnectionBucket struct {
+	Idx         int     `json:"index"`
 	Count       int     `json:"count"`
 	IncrementBy float64 `json:"incrBy"`
 }
 
 //SocketStats used to measure timing stats
 type SocketStats struct {
+	HitrateIndex      int
 	ConnectTime       time.Duration `json:"connecttime"`
 	Success           bool          `json:"success"`
 	DNSResolutionTime time.Duration `json:"dnstime"`
