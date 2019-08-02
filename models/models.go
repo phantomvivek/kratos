@@ -12,7 +12,7 @@ type Configuration struct {
 	Config   ConnectionConfig `json:"config"`
 	HitRates []HitRate        `json:"hitrate"`
 	Tests    []Test           `json:"tests"`
-	DataFile string           `json:"data,omitempty"`
+	DataFile string           `json:"dataFile,omitempty"`
 }
 
 //ConnectionConfig will contain URL & related parameters
@@ -31,9 +31,23 @@ type HitRate struct {
 
 //Test type is used for sending messages
 type Test struct {
-	Type     string          `json:"type"`
-	Duration int             `json:"duration,omitempty"`
-	SendJSON json.RawMessage `json:"send,omitempty"`
+	Type       string          `json:"type"`
+	Duration   int             `json:"duration,omitempty"`
+	SendJSON   json.RawMessage `json:"send,omitempty"`
+	ReplaceStr bool            `json:"replace,omitempty"`
+	Data       *TestData       `json:"testdata,omitempty"`
+}
+
+//TestData will hold all the constructed messages after replacing variables from file
+type TestData struct {
+	Counter   int               `json:"counter"`
+	DataArray []json.RawMessage `json:"messageArray"`
+}
+
+//TestDataConfig saves a config for replacing a particular column from csv in the message
+type TestDataConfig struct {
+	ColumnIdx int
+	TextBytes []byte
 }
 
 //ConnectionBucket this has a per second count and incremented by previous second

@@ -94,7 +94,7 @@ func CustomDialer(ctx context.Context, network, addr string) (net.Conn, error) {
 }
 
 //SocketRun goroutine that makes a socket collection with the host and starts the tests
-func SocketRun(hostURL string, timeout int, tests []models.Test, doneChan chan bool, errChan chan error, hitIdx int, reporterChan chan *models.SocketStats) {
+func SocketRun(hostURL string, timeout int, tests []*models.Test, doneChan chan bool, errChan chan error, hitIdx int, reporterChan chan *models.SocketStats) {
 
 	socket := Socket{
 		Dialer: &websocket.Dialer{
@@ -143,7 +143,7 @@ func (s *Socket) Connect(url string) error {
 }
 
 //DoTests runs through tests for this socket
-func (s *Socket) DoTests(tests []models.Test) {
+func (s *Socket) DoTests(tests []*models.Test) {
 
 	for _, test := range tests {
 

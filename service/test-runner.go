@@ -1,6 +1,7 @@
 package service
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
 	"time"
@@ -18,7 +19,7 @@ type Runner struct {
 	ErrChan         chan error
 	HostURL         string
 	ConnectTimeout  int
-	Tests           []models.Test
+	Tests           []*models.Test
 	HitRates        []models.HitRate
 	Flows           []models.ConnectionBucket
 }
@@ -36,8 +37,14 @@ func (r *Runner) Initialize() {
 		SocketDoneCount: 0,
 		HostURL:         config.Config.Config.URL,
 		ConnectTimeout:  config.Config.Config.Timeout,
-		Tests:           config.Config.Tests,
 		HitRates:        config.Config.HitRates,
+	}
+
+	TestRunner.Tests = make([]*models.Test, 0)
+
+	for _, test := range config.Config.Tests {
+		testRef := test
+		TestRunner.Tests = append(TestRunner.Tests, &testRef)
 	}
 
 	//Defaults to 10 seconds
@@ -52,6 +59,14 @@ func (r *Runner) Start() {
 	//Prepare per second buckets to determine how many sockets are to be opened per second
 	r.PrepareBuckets()
 
+	//Prepare data that will be sent to sockets in case any test has a message & replace string
+	handler := DataHandler{}
+
+	handler.PrepareTestData(config.Config.DataFile, r.TotalCount, r.Tests)
+
+	byteD, _ := json.Marshal(r.Tests)
+	fmt.Println("Tests", string(byteD))
+
 	//Start the error listener
 	go r.ErrorListener()
 
@@ -62,7 +77,7 @@ func (r *Runner) Start() {
 	go Reporter.Start()
 
 	//Run tests!
-	r.RunTests()
+	//r.RunTests()
 }
 
 //CompleteNotify is notified when a socket test completes
