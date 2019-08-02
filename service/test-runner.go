@@ -17,6 +17,7 @@ type Runner struct {
 	TotalCount      int
 	ErrChan         chan error
 	HostURL         string
+	ConnectTimeout  int
 	Tests           []models.Test
 	HitRates        []models.HitRate
 	Flows           []models.ConnectionBucket
@@ -34,8 +35,14 @@ func (r *Runner) Initialize() {
 		TotalCount:      0,
 		SocketDoneCount: 0,
 		HostURL:         config.Config.Config.URL,
+		ConnectTimeout:  config.Config.Config.Timeout,
 		Tests:           config.Config.Tests,
 		HitRates:        config.Config.HitRates,
+	}
+
+	//Defaults to 10 seconds
+	if TestRunner.ConnectTimeout == 0 {
+		TestRunner.ConnectTimeout = 10
 	}
 }
 
@@ -141,8 +148,17 @@ func (r *Runner) PrepareBuckets() {
 //RunTests runs the tests according to the flow
 func (r *Runner) RunTests() {
 
+	currFlow := -1
+
 	//We divide every 10 milliseconds for opening sockets. This can be made more granular
 	for _, flow := range r.Flows {
+
+		//Print out when a hitrate starts
+		if currFlow < flow.Idx {
+			currFlow = flow.Idx
+			rate := r.HitRates[currFlow]
+			fmt.Printf("Starting hitrate:\tstart=%v, end=%v, total=%v, duration=%vs\n", rate.StartConnections, rate.EndConnections, rate.Connections, rate.Duration)
+		}
 
 		/*
 			We calculate sockets to be opened per 10ms,
@@ -191,5 +207,5 @@ func (r *Runner) RunTests() {
 func (r *Runner) OpenSocket(hitIdx int) {
 
 	//Open a socket
-	go SocketRun(r.HostURL, r.Tests, r.SocketDoneChan, r.ErrChan, hitIdx, Reporter.ReportChan)
+	go SocketRun(r.HostURL, r.ConnectTimeout, r.Tests, r.SocketDoneChan, r.ErrChan, hitIdx, Reporter.ReportChan)
 }

@@ -1,6 +1,7 @@
 {
     "config": {
-        "url": "ws://localhost:8080/"
+        "url": "ws://localhost:8080/",
+        "timeout": 5
     },
     "hitrate": [{
         "end": 10,

@@ -25,11 +25,18 @@ type ContextKey string
 //CustomDialer ..need to figure how to pass ID & channel for this
 func CustomDialer(ctx context.Context, network, addr string) (net.Conn, error) {
 
+	//These variables will always be set
 	statsRef, ok := ctx.Value(ContextKey("StatsRef")).(*models.SocketStats)
+	timeout, _ := ctx.Value(ContextKey("Timeout")).(int)
+
 	var connectStart time.Time
 	var dnsStart time.Time
+	var overallTime time.Time
 	var connectDiff time.Duration
 	var dnsDiff time.Duration
+	var overallDiff time.Duration
+
+	overallTime = time.Now()
 
 	ctTrace := &httptrace.ClientTrace{
 		// GotConn: func(connInfo httptrace.GotConnInfo) {
@@ -60,14 +67,17 @@ func CustomDialer(ctx context.Context, network, addr string) (net.Conn, error) {
 	}
 	traceCtx := httptrace.WithClientTrace(ctx, ctTrace)
 	dialer := net.Dialer{
-		Timeout: 10 * time.Second,
+		Timeout: time.Duration(timeout) * time.Second,
 	}
 
 	conn, err := dialer.DialContext(traceCtx, network, addr)
 
+	overallDiff = time.Since(overallTime)
+
 	if ok {
 		statsRef.ConnectTime = connectDiff
 		statsRef.DNSResolutionTime = dnsDiff
+		statsRef.OverallTime = overallDiff
 		if err != nil {
 			statsRef.Success = false
 			statsRef.ErrorString = err.Error()
@@ -84,7 +94,7 @@ func CustomDialer(ctx context.Context, network, addr string) (net.Conn, error) {
 }
 
 //SocketRun goroutine that makes a socket collection with the host and starts the tests
-func SocketRun(hostURL string, tests []models.Test, doneChan chan bool, errChan chan error, hitIdx int, reporterChan chan models.SocketStats) {
+func SocketRun(hostURL string, timeout int, tests []models.Test, doneChan chan bool, errChan chan error, hitIdx int, reporterChan chan *models.SocketStats) {
 
 	socket := Socket{
 		Dialer: &websocket.Dialer{
@@ -97,6 +107,7 @@ func SocketRun(hostURL string, tests []models.Test, doneChan chan bool, errChan 
 	}
 
 	socket.Context = context.WithValue(context.Background(), ContextKey("StatsRef"), socket.SocketStats)
+	socket.Context = context.WithValue(socket.Context, ContextKey("Timeout"), timeout)
 
 	err := socket.Connect(hostURL)
 	if err != nil {
@@ -104,14 +115,14 @@ func SocketRun(hostURL string, tests []models.Test, doneChan chan bool, errChan 
 		doneChan <- true
 
 		//In case of errors, we need to send the stats
-		reporterChan <- *socket.SocketStats
+		reporterChan <- socket.SocketStats
 
 		return
 	}
 
 	socket.DoTests(tests)
 
-	reporterChan <- *socket.SocketStats
+	reporterChan <- socket.SocketStats
 
 	//Tests would be complete
 	doneChan <- true

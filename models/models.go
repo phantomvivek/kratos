@@ -17,7 +17,8 @@ type Configuration struct {
 
 //ConnectionConfig will contain URL & related parameters
 type ConnectionConfig struct {
-	URL string `json:"url"`
+	URL     string `json:"url"`
+	Timeout int    `json:"timeout,omitempty"`
 }
 
 //HitRate defines a rate of hitting the test applicant with connections
@@ -46,8 +47,9 @@ type ConnectionBucket struct {
 type SocketStats struct {
 	HitrateIndex      int           `json:"hrIdx"`
 	ConnectTime       time.Duration `json:"connecttime"`
-	Success           bool          `json:"success"`
 	DNSResolutionTime time.Duration `json:"dnstime"`
+	OverallTime       time.Duration `json:"overalltime"`
+	Success           bool          `json:"success"`
 	ErrorString       string        `json:"error"`
 }
 
@@ -65,5 +67,8 @@ type HitRateStats struct {
 	DNSResolutionLatencies  *tdigest.TDigest
 	DNSResolutionLatencyMin float64
 	DNSResolutionLatencyMax float64
+	OverallLatencies        *tdigest.TDigest
+	OverallLatencyMin       float64
+	OverallLatencyMax       float64
 	ErrorSet                map[string]int
 }
