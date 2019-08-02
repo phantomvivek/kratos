@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net"
 	"net/http/httptrace"
@@ -94,7 +95,7 @@ func CustomDialer(ctx context.Context, network, addr string) (net.Conn, error) {
 }
 
 //SocketRun goroutine that makes a socket collection with the host and starts the tests
-func SocketRun(hostURL string, timeout int, tests []*models.Test, doneChan chan bool, errChan chan error, hitIdx int, reporterChan chan *models.SocketStats) {
+func SocketRun(hostURL string, timeout int, tests []*models.Test, dataIdx int, doneChan chan bool, errChan chan error, hitIdx int, reporterChan chan *models.SocketStats) {
 
 	socket := Socket{
 		Dialer: &websocket.Dialer{
@@ -120,7 +121,7 @@ func SocketRun(hostURL string, timeout int, tests []*models.Test, doneChan chan 
 		return
 	}
 
-	socket.DoTests(tests)
+	socket.DoTests(tests, dataIdx)
 
 	reporterChan <- socket.SocketStats
 
@@ -143,13 +144,20 @@ func (s *Socket) Connect(url string) error {
 }
 
 //DoTests runs through tests for this socket
-func (s *Socket) DoTests(tests []*models.Test) {
+func (s *Socket) DoTests(tests []*models.Test, dataIdx int) {
 
 	for _, test := range tests {
 
 		if test.Type == "message" {
+
+			var msg json.RawMessage
+			if test.ReplaceStr {
+				msg = test.Data.DataArray[dataIdx]
+			} else {
+				msg = test.SendJSON
+			}
 			//Need to send message to the host
-			err := s.Connection.WriteMessage(websocket.TextMessage, test.SendJSON)
+			err := s.Connection.WriteMessage(websocket.TextMessage, msg)
 			if err != nil {
 				//Log error
 				fmt.Println("Error occured in sending message to host", err)

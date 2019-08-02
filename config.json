@@ -4,21 +4,30 @@
         "timeout": 5
     },
     "hitrate": [{
-        "end": 10,
-        "duration": 2
+        "end": 100,
+        "duration": 10
     },
     {
-        "end": 10,
-        "duration": 2
+        "end": 100,
+        "duration": 10
     },
     {
         "end": 0,
-        "duration": 2
+        "duration": 10
     }],
     "tests": [{
         "type": "message",
         "send": "${0} and ${1}",
         "replace": true
+    },
+    {
+        "type": "message",
+        "send": "${1} next and ${2}",
+        "replace": true
+    },
+    {
+        "type": "message",
+        "send": "${1} no replace ${2}"
     },
     {
         "type": "sleep",

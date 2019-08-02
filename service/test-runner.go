@@ -1,7 +1,6 @@
 package service
 
 import (
-	"encoding/json"
 	"fmt"
 	"math"
 	"time"
@@ -19,6 +18,8 @@ type Runner struct {
 	ErrChan         chan error
 	HostURL         string
 	ConnectTimeout  int
+	MaxDataLength   int
+	DataIndex       int
 	Tests           []*models.Test
 	HitRates        []models.HitRate
 	Flows           []models.ConnectionBucket
@@ -35,6 +36,8 @@ func (r *Runner) Initialize() {
 		SocketDoneChan:  make(chan bool, 1),
 		TotalCount:      0,
 		SocketDoneCount: 0,
+		MaxDataLength:   0,
+		DataIndex:       -1,
 		HostURL:         config.Config.Config.URL,
 		ConnectTimeout:  config.Config.Config.Timeout,
 		HitRates:        config.Config.HitRates,
@@ -62,10 +65,7 @@ func (r *Runner) Start() {
 	//Prepare data that will be sent to sockets in case any test has a message & replace string
 	handler := DataHandler{}
 
-	handler.PrepareTestData(config.Config.DataFile, r.TotalCount, r.Tests)
-
-	byteD, _ := json.Marshal(r.Tests)
-	fmt.Println("Tests", string(byteD))
+	r.MaxDataLength = handler.PrepareTestData(config.Config.DataFile, r.TotalCount, r.Tests)
 
 	//Start the error listener
 	go r.ErrorListener()
@@ -77,7 +77,7 @@ func (r *Runner) Start() {
 	go Reporter.Start()
 
 	//Run tests!
-	//r.RunTests()
+	r.RunTests()
 }
 
 //CompleteNotify is notified when a socket test completes
@@ -163,17 +163,8 @@ func (r *Runner) PrepareBuckets() {
 //RunTests runs the tests according to the flow
 func (r *Runner) RunTests() {
 
-	//currFlow := -1
-
 	//We divide every 10 milliseconds for opening sockets. This can be made more granular
 	for _, flow := range r.Flows {
-
-		// //Print out when a hitrate starts
-		// if currFlow < flow.Idx {
-		// 	currFlow = flow.Idx
-		// 	rate := r.HitRates[currFlow]
-		// 	fmt.Printf("Starting hitrate:\tstart=%v, end=%v, total=%v, duration=%vs\n", rate.StartConnections, rate.EndConnections, rate.Connections, rate.Duration)
-		// }
 
 		/*
 			We calculate sockets to be opened per 10ms,
@@ -221,6 +212,11 @@ func (r *Runner) RunTests() {
 //OpenSocket opens a socket.. this was repeated code
 func (r *Runner) OpenSocket(hitIdx int) {
 
+	r.DataIndex++
+	if r.DataIndex >= r.MaxDataLength {
+		r.DataIndex = 0
+	}
+
 	//Open a socket
-	go SocketRun(r.HostURL, r.ConnectTimeout, r.Tests, r.SocketDoneChan, r.ErrChan, hitIdx, Reporter.ReportChan)
+	go SocketRun(r.HostURL, r.ConnectTimeout, r.Tests, r.DataIndex, r.SocketDoneChan, r.ErrChan, hitIdx, Reporter.ReportChan)
 }
