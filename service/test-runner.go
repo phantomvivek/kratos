@@ -148,17 +148,17 @@ func (r *Runner) PrepareBuckets() {
 //RunTests runs the tests according to the flow
 func (r *Runner) RunTests() {
 
-	currFlow := -1
+	//currFlow := -1
 
 	//We divide every 10 milliseconds for opening sockets. This can be made more granular
 	for _, flow := range r.Flows {
 
-		//Print out when a hitrate starts
-		if currFlow < flow.Idx {
-			currFlow = flow.Idx
-			rate := r.HitRates[currFlow]
-			fmt.Printf("Starting hitrate:\tstart=%v, end=%v, total=%v, duration=%vs\n", rate.StartConnections, rate.EndConnections, rate.Connections, rate.Duration)
-		}
+		// //Print out when a hitrate starts
+		// if currFlow < flow.Idx {
+		// 	currFlow = flow.Idx
+		// 	rate := r.HitRates[currFlow]
+		// 	fmt.Printf("Starting hitrate:\tstart=%v, end=%v, total=%v, duration=%vs\n", rate.StartConnections, rate.EndConnections, rate.Connections, rate.Duration)
+		// }
 
 		/*
 			We calculate sockets to be opened per 10ms,
