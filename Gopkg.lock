@@ -2,6 +2,14 @@
 
 
 [[projects]]
+  digest = "1:d4481a0a5cdc502f459253d6325d75686e5cc1ef1de6b1bdaec4cae3bc30eb15"
+  name = "github.com/etsy/statsd"
+  packages = ["examples/go"]
+  pruneopts = "UT"
+  revision = "3a3ced99de00855dfc0a45386f466ad5a8d8a549"
+  version = "v0.8.5"
+
+[[projects]]
   digest = "1:e62657cca9badaa308d86e7716083e4c5933bb78e30a17743fc67f50be26f6f4"
   name = "github.com/gorilla/websocket"
   packages = ["."]
@@ -21,6 +29,7 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "github.com/etsy/statsd/examples/go",
     "github.com/gorilla/websocket",
     "github.com/influxdata/tdigest",
   ]

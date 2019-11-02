@@ -60,12 +60,6 @@ func init() {
 		},
 	}
 
-	Reporter.StatsStrings.Success = fmt.Sprintf("%s.socket.success", config.Config.Reporter.Prefix)
-	Reporter.StatsStrings.Failure = fmt.Sprintf("%s.socket.failure", config.Config.Reporter.Prefix)
-	Reporter.StatsStrings.ConnectLatency = fmt.Sprintf("%s.socket.connect-latency", config.Config.Reporter.Prefix)
-	Reporter.StatsStrings.DNSLatency = fmt.Sprintf("%s.socket.dns-resolution-latency", config.Config.Reporter.Prefix)
-	Reporter.StatsStrings.OverallLatency = fmt.Sprintf("%s.socket.overall-latency", config.Config.Reporter.Prefix)
-
 	Reporter.ReportString = "Connections\t[total]\t%v sockets\n" +
 		"Connect\t[success, error, timeout]\t%v, %v, %v\n" +
 		"Connect Time\t[min, p50, p95, p99, max]\t%s, %s, %s, %s, %s\n" +
@@ -75,11 +69,19 @@ func init() {
 	Reporter.HitrateString = "Hitrate Connection Parameters\tstart=%v, end=%v, total=%v, duration=%vs\n"
 
 	Reporter.TabWriter = tabwriter.NewWriter(os.Stdout, 0, 8, 2, ' ', tabwriter.StripEscape)
-}
 
-//Connect to any third party reporting tool like a statsd daemon
-func (r *StatsReporter) Connect(reporter *models.ReporterConfig) {
-	r.StatsdClient = statsd.New(reporter.Host, reporter.Port)
+	//Connect reporter module to connect to any third party reporting tool like a statsd daemon
+	if config.Config.Reporter.Type == "statsd" {
+
+		//Connect to the statsd daemon
+		Reporter.StatsdClient = statsd.New(config.Config.Reporter.Host, config.Config.Reporter.Port)
+
+		Reporter.StatsStrings.Success = fmt.Sprintf("%s.socket.success", config.Config.Reporter.Prefix)
+		Reporter.StatsStrings.Failure = fmt.Sprintf("%s.socket.failure", config.Config.Reporter.Prefix)
+		Reporter.StatsStrings.ConnectLatency = fmt.Sprintf("%s.socket.connect-latency", config.Config.Reporter.Prefix)
+		Reporter.StatsStrings.DNSLatency = fmt.Sprintf("%s.socket.dns-resolution-latency", config.Config.Reporter.Prefix)
+		Reporter.StatsStrings.OverallLatency = fmt.Sprintf("%s.socket.overall-latency", config.Config.Reporter.Prefix)
+	}
 }
 
 //MakeHitRateStat makes a stat object based on the hitrate id
@@ -118,6 +120,10 @@ func (r *StatsReporter) Start() {
 
 			r.MeasureLatencies(hrStat, metric)
 
+			if config.Config.Reporter.Type == "statsd" {
+				r.ReportStatsd(metric)
+			}
+
 			if hrStat.TotalConnections >= hrStat.HitRateRef.Connections {
 				//Report this hit rate as all connections for this hitrate have finished
 				r.LogHitrate(hrStat.HitRateRef)
@@ -140,6 +146,20 @@ func (r *StatsReporter) Start() {
 	}
 }
 
+//ReportStatsd reporting latencies out to statsd
+func (r *StatsReporter) ReportStatsd(metric *models.SocketStats) {
+
+	if metric.Success {
+		r.StatsdClient.Increment(Reporter.StatsStrings.Success)
+	} else {
+		r.StatsdClient.Increment(Reporter.StatsStrings.Failure)
+	}
+
+	r.StatsdClient.Timing(Reporter.StatsStrings.ConnectLatency, metric.ConnectTime.Milliseconds())
+	r.StatsdClient.Timing(Reporter.StatsStrings.DNSLatency, metric.DNSResolutionTime.Milliseconds())
+	r.StatsdClient.Timing(Reporter.StatsStrings.OverallLatency, metric.OverallTime.Milliseconds())
+}
+
 //MeasureLatencies measures latencies when a metric comes in
 func (r *StatsReporter) MeasureLatencies(hrStat *models.HitRateStats, metric *models.SocketStats) {
 
@@ -148,11 +168,9 @@ func (r *StatsReporter) MeasureLatencies(hrStat *models.HitRateStats, metric *mo
 	if metric.Success {
 		hrStat.ConnectSuccess++
 		r.AllStats.ConnectSuccess++
-		r.StatsdClient.Increment(Reporter.StatsStrings.Success)
 	} else {
 		r.AllStats.ConnectFailure++
 		hrStat.ConnectFailure++
-		r.StatsdClient.Increment(Reporter.StatsStrings.Failure)
 	}
 
 	//Add to Current hit rate stats
@@ -172,10 +190,6 @@ func (r *StatsReporter) MeasureLatencies(hrStat *models.HitRateStats, metric *mo
 	r.AllStats.ConnectLatencies.Add(float64(metric.ConnectTime), 1)
 	r.AllStats.DNSResolutionLatencies.Add(float64(metric.DNSResolutionTime), 1)
 	r.AllStats.OverallLatencies.Add(float64(metric.OverallTime), 1)
-
-	r.StatsdClient.Timing(Reporter.StatsStrings.ConnectLatency, metric.ConnectTime.Milliseconds())
-	r.StatsdClient.Timing(Reporter.StatsStrings.DNSLatency, metric.DNSResolutionTime.Milliseconds())
-	r.StatsdClient.Timing(Reporter.StatsStrings.OverallLatency, metric.OverallTime.Milliseconds())
 
 	if metric.ErrorString != "" {
 		if _, ok := hrStat.ErrorSet[metric.ErrorString]; ok {
