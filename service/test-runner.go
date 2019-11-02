@@ -59,6 +59,9 @@ func (r *Runner) Initialize() {
 //Start starts the tests
 func (r *Runner) Start() {
 
+	//Set up the Reporter to report to an external daemon like statsd if configured
+	Reporter.ConnectDameon()
+
 	//Prepare per second buckets to determine how many sockets are to be opened per second
 	r.PrepareBuckets()
 

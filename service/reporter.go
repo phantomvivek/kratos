@@ -69,19 +69,6 @@ func init() {
 	Reporter.HitrateString = "Hitrate Connection Parameters\tstart=%v, end=%v, total=%v, duration=%vs\n"
 
 	Reporter.TabWriter = tabwriter.NewWriter(os.Stdout, 0, 8, 2, ' ', tabwriter.StripEscape)
-
-	//Connect reporter module to connect to any third party reporting tool like a statsd daemon
-	if config.Config.Reporter.Type == "statsd" {
-
-		//Connect to the statsd daemon
-		Reporter.StatsdClient = statsd.New(config.Config.Reporter.Host, config.Config.Reporter.Port)
-
-		Reporter.StatsStrings.Success = fmt.Sprintf("%s.socket.success", config.Config.Reporter.Prefix)
-		Reporter.StatsStrings.Failure = fmt.Sprintf("%s.socket.failure", config.Config.Reporter.Prefix)
-		Reporter.StatsStrings.ConnectLatency = fmt.Sprintf("%s.socket.connect-latency", config.Config.Reporter.Prefix)
-		Reporter.StatsStrings.DNSLatency = fmt.Sprintf("%s.socket.dns-resolution-latency", config.Config.Reporter.Prefix)
-		Reporter.StatsStrings.OverallLatency = fmt.Sprintf("%s.socket.overall-latency", config.Config.Reporter.Prefix)
-	}
 }
 
 //MakeHitRateStat makes a stat object based on the hitrate id
@@ -106,6 +93,22 @@ func (r *StatsReporter) MakeHitRateStat(idx int, hitrate models.HitRate) {
 	}
 
 	r.RateStats[idx] = &hrStat
+}
+
+//ConnectDameon connect reporter module to connect to any third party reporting tool like a statsd daemon
+func (r *StatsReporter) ConnectDameon() {
+
+	if config.Config.Reporter.Type == "statsd" {
+
+		//Connect to the statsd daemon
+		Reporter.StatsdClient = statsd.New(config.Config.Reporter.Host, config.Config.Reporter.Port)
+
+		Reporter.StatsStrings.Success = fmt.Sprintf("%s.socket.success", config.Config.Reporter.Prefix)
+		Reporter.StatsStrings.Failure = fmt.Sprintf("%s.socket.failure", config.Config.Reporter.Prefix)
+		Reporter.StatsStrings.ConnectLatency = fmt.Sprintf("%s.socket.connect-latency", config.Config.Reporter.Prefix)
+		Reporter.StatsStrings.DNSLatency = fmt.Sprintf("%s.socket.dns-resolution-latency", config.Config.Reporter.Prefix)
+		Reporter.StatsStrings.OverallLatency = fmt.Sprintf("%s.socket.overall-latency", config.Config.Reporter.Prefix)
+	}
 }
 
 //Start starts the reporter to listen to any metric data coming on channel
