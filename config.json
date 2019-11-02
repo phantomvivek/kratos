@@ -36,5 +36,11 @@
     {
         "type": "disconnect"
     }],
-    "dataFile": "tests/datafile.csv"
+    "dataFile": "tests/datafile.csv",
+    "reporter": {
+        "type": "statsd",
+        "host": "127.0.0.1",
+        "port": 8125,
+        "prefix": "testproject"
+    }
 }

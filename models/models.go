@@ -13,6 +13,15 @@ type Configuration struct {
 	HitRates []HitRate        `json:"hitrate"`
 	Tests    []Test           `json:"tests"`
 	DataFile string           `json:"dataFile,omitempty"`
+	Reporter ReporterConfig   `json:"reporter"`
+}
+
+//ReporterConfig to read the reporting config
+type ReporterConfig struct {
+	Type   string `json:"type"`
+	Host   string `json:"host"`
+	Port   int    `json:"port"`
+	Prefix string `json:"prefix"`
 }
 
 //ConnectionConfig will contain URL & related parameters

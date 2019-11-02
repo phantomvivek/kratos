@@ -54,6 +54,11 @@ func (r *Runner) Initialize() {
 	if TestRunner.ConnectTimeout == 0 {
 		TestRunner.ConnectTimeout = 10
 	}
+
+	//Connect reporter module to connect to any third party reporting tool like a statsd daemon
+	if config.Config.Reporter.Type == "statsd" {
+		Reporter.Connect(&config.Config.Reporter)
+	}
 }
 
 //Start starts the tests
