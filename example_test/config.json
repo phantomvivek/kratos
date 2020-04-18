@@ -4,11 +4,11 @@
         "timeout": 5
     },
     "hitrate": [{
-        "end": 100,
+        "end": 20,
         "duration": 10
     },
     {
-        "end": 100,
+        "end": 20,
         "duration": 10
     },
     {
@@ -17,17 +17,12 @@
     }],
     "tests": [{
         "type": "message",
-        "send": "${0} and ${1}",
+        "send": "CSV data! ${0} and ${1} and ${2}",
         "replace": true
     },
     {
         "type": "message",
-        "send": "${1} next and ${2}",
-        "replace": true
-    },
-    {
-        "type": "message",
-        "send": "${1} no replace ${2}"
+        "send": "Strings in this message won't be replaced! ${1} and ${2}"
     },
     {
         "type": "sleep",
@@ -36,11 +31,5 @@
     {
         "type": "disconnect"
     }],
-    "dataFile": "tests/datafile.csv",
-    "reporter": {
-        "type": "statsd",
-        "host": "127.0.0.1",
-        "port": 8125,
-        "prefix": "testproject"
-    }
+    "dataFile": "example_test/datafile.csv"
 }
