@@ -19,6 +19,7 @@ function Connect(ws) {
     connectCount++;
     totalConnects++;
     console.log(`\nConnection opened: ${socketId}`)
+
     ws.on('message', (msg) => {
         console.log(`Message on socket ${socketId}: ${msg}`)
     });
