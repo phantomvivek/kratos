@@ -14,12 +14,12 @@ Websocket servers exist in a lot of spaces, especially gaming. Load testing is a
 - Jmeter
 - Gatling
 
-This lib has evolved from being a measly node.js script to a somewhat good (hopefully) tool to test websocket applications. Suggestions / PRs welcome!
+This lib has evolved from being a measly node.js script to a somewhat good (hopefully) tool to test websocket applications. Suggestions / PRs / Questions welcome!
 
 ---
 
 ## API:
-The JSON test config (Please go through [sample config](https://github.com/phantomvivek/kratos/blob/master/config.json)) is divided into the following parts:
+The JSON test config ([sample config](https://github.com/phantomvivek/kratos/blob/master/config.json)) is divided into the following parts:
 
 * config: Base config for app url & timeout value
   * url: The url of the websocket app (eg: ws://localhost:8080/)
@@ -48,7 +48,17 @@ The JSON test config (Please go through [sample config](https://github.com/phant
   * type: Only supported value is "statsd". Will always report to stdout too.
   * host: Host for statsd daemon
   * port: Port for statsd daemon
-  * prefix: Prefix string for all statsd metrics, eg: "myapp.loadtest"
+  * prefix: Prefix string for all statsd metrics, eg: "example.myapp"
+
+  Sample reporter example JSON for statsd:
+  ```json
+  "reporter": {
+    "type": "statsd",
+    "host": "localhost",
+    "port": 8125,
+    "prefix": "example.myapp"
+  }
+  ```
 
 ### API Example
 Consider the following example for how hitrate & tests work. First, we will look at the hitrate array:
