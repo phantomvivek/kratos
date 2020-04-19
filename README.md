@@ -41,7 +41,7 @@ The JSON test config (Please go through [sample config](https://github.com/phant
   * replace: Boolean value, in case you don't want to replace constants in "send" string, in case you want to use template variables in a message as is.
 
 
-* dataFile: The path to the CSV file to use for data in the messages in tests. Do note that if you leave some columns in some rows blank then the replaced variable in "send" will be empty strings
+* dataFile: The path to the CSV file to use for data in the messages in tests. A connection will use data from only a single row for its `tests`
 
 
 * reporter: Kratos always reports to stdout. Use "type" as "statsd" to report to statsd as well. (Below properties only work if type is "statsd")
@@ -49,6 +49,68 @@ The JSON test config (Please go through [sample config](https://github.com/phant
   * host: Host for statsd daemon
   * port: Port for statsd daemon
   * prefix: Prefix string for all statsd metrics, eg: "myapp.loadtest"
+
+### API Example
+Consider the following example for how hitrate & tests work. First, we will look at the hitrate array:
+```javascript
+hitrate: [
+  { duration: 10, end: 20 },
+  { duration: 10, end: 20 },
+  { duration: 10, end: 0 }
+]
+```
+We will assume the app isn't closing any connections made to it:
+1. For the first phase of 10 seconds, start with making 2 connections in the first second, increase 2 connections *per second*, and end with 20 connections *per second*. This is the *ramp-up* duration.
+    - 1st second = Make 2 connections = App has 2 active connections
+    - 2nd second = Make 4 connections = App now has 6 active connections
+    ...
+    - 10th second = Make 20 connections = App now has 110 active connections
+    - Use the arithmetic sequence sum formula = `n/2 * (2a + (n - 1)d)`, where *n = number of terms (10 in this example)*, *a = first term (2, connections in the 1st second)* & *d = difference (2, per second increment)*
+2. For the next phase of 10 seconds, keep making 20 connections *per second* as `end=20`. This is the *steady* duration. In this duration, the app will receive a total of 200 connections (20 * 10).
+3. For the 3rd phase of 10 seconds, decrease the connections made each second to reach 0 connections at the end of this duration. This is the *ramp-down* duration.
+
+**Note:** This is just an illustrative example. Feel free to use any number of phases, durations or connections.
+
+
+Next up, the tests array:
+```javascript
+tests: [{
+  "type": "message",
+  "send": "CSV data! ${0} and ${1} and ${2}",
+  "replace": true
+},
+{
+  "type": "message",
+  "send": "Strings in this message won't be replaced! ${1} and ${2}"
+},
+{
+  "type": "sleep",
+  "duration": 2
+},
+{
+  "type": "disconnect"
+}]
+```
+For ***each connection*** made to the app, the connection will do the following *tests* in the order they're defined:
+1. Send a message with variables replaced by CSV data
+2. Send a message where the string is sent as is
+3. Do nothing for 2 seconds
+4. Disconnect the socket. (*Note: If any tests are defined after disconnecting the socket, it will error out*)
+
+Example logs from the app being tested:
+```
+Socket opened
+Message on socket: "CSV data! row1A and  row1B and  row1C"  -- Note that the variables were replaced from CSV
+Message on socket: "Strings in this message won't be replaced! ${1} and ${2}"
+...nothing for 2 seconds...
+Socket disconnected
+
+Socket opened
+Message on socket: "CSV data! row2A and  row2B and  row2C"   -- Note that the variables were replaced from CSV
+Message on socket: "Strings in this message won't be replaced! ${1} and ${2}"
+...nothing for 2 seconds...
+Socket disconnected
+```
 
 ---
 
