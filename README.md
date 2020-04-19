@@ -123,7 +123,7 @@ Socket disconnected
 ```
 
 
-Stdout from the above sample test:
+Stdout report from the above sample test:
 ```
 Hitrate Connection Parameters  start=0, end=20, total=110, duration=10s
 Connections   [total]                    110 sockets
