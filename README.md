@@ -73,7 +73,7 @@ We will assume the app isn't closing any connections made to it:
 1. For the first phase of 10 seconds, start with making 2 connections in the first second, increase 2 connections *per second*, and end with 20 connections *per second*. This is the *ramp-up* duration.
     - 1st second = Make 2 connections = App has 2 active connections
     - 2nd second = Make 4 connections = App now has 6 active connections
-    ...
+    - ...
     - 10th second = Make 20 connections = App now has 110 active connections
     - Use the arithmetic sequence sum formula = `n/2 * (2a + (n - 1)d)`, where *n = number of terms (10 in this example)*, *a = first term (2, connections in the 1st second)* & *d = difference (2, per second increment)*
 2. For the next phase of 10 seconds, keep making 20 connections *per second* as `end=20`. This is the *steady* duration. In this duration, the app will receive a total of 200 connections (20 * 10).
