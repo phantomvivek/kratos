@@ -122,6 +122,41 @@ Message on socket: "Strings in this message won't be replaced! ${1} and ${2}"
 Socket disconnected
 ```
 
+
+Stdout from the above sample test:
+```
+Hitrate Connection Parameters  start=0, end=20, total=110, duration=10s
+Connections   [total]                    110 sockets
+Connect       [success, error, timeout]  110, 0, 0
+Connect Time  [min, p50, p95, p99, max]  160.9µs, 304.75µs, 462.842µs, 529.627µs, 585.16µs
+DNS Time      [min, p50, p95, p99, max]  382.777µs, 787.592µs, 1.093248ms, 4.08394ms, 8.372698ms
+Overall Time  [min, p50, p95, p99, max]  590.591µs, 1.184949ms, 1.640433ms, 4.746697ms, 9.205674ms
+Error Set     [error, count]             No Errors
+
+Hitrate Connection Parameters  start=20, end=20, total=200, duration=10s
+Connections   [total]                    200 sockets
+Connect       [success, error, timeout]  200, 0, 0
+Connect Time  [min, p50, p95, p99, max]  166.163µs, 415.709µs, 494.152µs, 526.128µs, 561.946µs
+DNS Time      [min, p50, p95, p99, max]  392.02µs, 911.932µs, 1.069107ms, 1.127137ms, 1.16402ms
+Overall Time  [min, p50, p95, p99, max]  620.833µs, 1.444975ms, 1.650193ms, 1.742506ms, 1.75402ms
+Error Set     [error, count]             No Errors
+
+Hitrate Connection Parameters  start=20, end=0, total=90, duration=10s
+Connections   [total]                    90 sockets
+Connect       [success, error, timeout]  90, 0, 0
+Connect Time  [min, p50, p95, p99, max]  181.771µs, 399.227µs, 498.895µs, 831.586µs, 1.009428ms
+DNS Time      [min, p50, p95, p99, max]  348.031µs, 910.464µs, 1.067685ms, 1.151787ms, 1.168275ms
+Overall Time  [min, p50, p95, p99, max]  623.163µs, 1.41633ms, 1.656885ms, 1.875193ms, 1.949352ms
+Error Set     [error, count]             No Errors
+
+All Tests Complete  Final Results Below:
+Connections         [total]                    400 sockets
+Connect             [success, error, timeout]  400, 0, 0
+Connect Time        [min, p50, p95, p99, max]  160.9µs, 383.859µs, 493.233µs, 551.177µs, 1.009428ms
+DNS Time            [min, p50, p95, p99, max]  348.031µs, 907.228µs, 1.073031ms, 1.158617ms, 8.372698ms
+Overall Time        [min, p50, p95, p99, max]  590.591µs, 1.411186ms, 1.65026ms, 1.758988ms, 9.205674ms
+Error Set           [error, count]             No Errors
+```
 ---
 
 ## To Do:
