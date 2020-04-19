@@ -123,7 +123,7 @@ Socket disconnected
 ```
 
 
-Stdout report from the above sample test (inspired from this tool, [vegeta](https://github.com/tsenart/vegeta)):
+Stdout report from the above sample test (format inspired from this tool, [vegeta](https://github.com/tsenart/vegeta)):
 ```
 Hitrate Connection Parameters  start=0, end=20, total=110, duration=10s
 Connections   [total]                    110 sockets
