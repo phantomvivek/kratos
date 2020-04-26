@@ -5,8 +5,8 @@ import (
 	"math"
 	"time"
 
-	"github.com/kratos/config"
-	"github.com/kratos/models"
+	"github.com/phantomvivek/kratos/config"
+	"github.com/phantomvivek/kratos/models"
 )
 
 //Runner Handles all the running of tests & running config

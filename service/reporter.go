@@ -6,13 +6,13 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"github.com/kratos/config"
+	"github.com/phantomvivek/kratos/config"
 
 	statsd "github.com/etsy/statsd/examples/go"
 
 	"github.com/influxdata/tdigest"
 
-	"github.com/kratos/models"
+	"github.com/phantomvivek/kratos/models"
 )
 
 //StatsReporter is the struct that holds all test stats

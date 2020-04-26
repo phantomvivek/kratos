@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/kratos/config"
-	"github.com/kratos/service"
+	"github.com/phantomvivek/kratos/config"
+	"github.com/phantomvivek/kratos/service"
 )
 
 func init() {

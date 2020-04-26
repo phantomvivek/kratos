@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/kratos/models"
+	"github.com/phantomvivek/kratos/models"
 )
 
 //Config holds the config for this load test

@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/kratos/models"
+	"github.com/phantomvivek/kratos/models"
 )
 
 //Socket = single socket connection to the host
