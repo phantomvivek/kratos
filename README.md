@@ -3,13 +3,13 @@ Load Testing Tool for Websockets, written in Go.
 
 ---
 
-### Install
+## Install
 Install `go` & ensure you have `GOBIN` in your path:
 ```
 go get -u github.com/phantomvivek/kratos
 ```
 
-### Run kratos
+## Run kratos
 If `go get` completed successfully, you will have `kratos` in your path.
 
 To run a configuration:
@@ -62,7 +62,7 @@ The JSON test config ([sample config](https://github.com/phantomvivek/kratos/blo
   }
   ```
 
-### API Example
+## API Example
 Consider the following example for how hitrate & tests work. First, we will look at the hitrate array:
 ```javascript
 hitrate: [
@@ -161,7 +161,7 @@ Error Set           [error, count]             No Errors
 ```
 ---
 
-### Another load testing tool? Why?
+## Another load testing tool? Why?
 Websocket servers exist in a lot of spaces, especially gaming. Load testing is an important testing facet for these applications. Over the last few years, after having thrown the kitchen sink at some apps trying to break them, there seemed to be no good way of getting this done.
 
 <ins>The problems faced primarily included:</ins>
