@@ -1,24 +1,25 @@
 # kratos
 Load Testing Tool for Websockets, written in Go.
 
-### Why?
-Websocket servers exist in a lot of spaces, especially gaming. Load testing is an important testing facet for these applications. Over the last few years, after having thrown the kitchen sink at some apps trying to break them, there seemed to be no good way of getting this done.
+---
 
-<ins>The problems faced primarily included:</ins>
-1. Message exchanges between tool & app
-2. Testing more than just the connection holding capacity of the app
-3. Strenous load tests without the lib crashing (:man_facepalming:)
+### Install
+Install `go` & ensure you have `GOBIN` in your path:
+```
+go get -u github.com/phantomvivek/kratos
+```
 
-<ins>The solutions tried over the years before building this:</ins>
-- Artillery.io
-- Jmeter
-- Gatling
+### Run kratos
+If `go get` completed successfully, you will have `kratos` in your path.
 
-This lib has evolved from being a measly node.js script to a somewhat good (hopefully) tool to test websocket applications. Suggestions / PRs / Questions welcome!
+To run a configuration:
+```
+kratos --config=/path/to/your/config.json
+```
 
 ---
 
-## API:
+## Configuration:
 The JSON test config ([sample config](https://github.com/phantomvivek/kratos/blob/master/config.json)) is divided into the following parts:
 
 * config: Base config for app url & timeout value
@@ -123,7 +124,7 @@ Socket disconnected
 ```
 
 
-Stdout report from the above sample test (format inspired from this tool, [vegeta](https://github.com/tsenart/vegeta)):
+Stdout report from the above sample test (format inspired from [vegeta](https://github.com/tsenart/vegeta)):
 ```
 Hitrate Connection Parameters  start=0, end=20, total=110, duration=10s
 Connections   [total]                    110 sockets
@@ -159,8 +160,25 @@ Error Set           [error, count]             No Errors
 ```
 ---
 
+### Another load testing tool? Why?
+Websocket servers exist in a lot of spaces, especially gaming. Load testing is an important testing facet for these applications. Over the last few years, after having thrown the kitchen sink at some apps trying to break them, there seemed to be no good way of getting this done.
+
+<ins>The problems faced primarily included:</ins>
+1. Message exchanges between tool & app
+2. Testing more than just the connection holding capacity of the app
+3. Strenous load tests without the lib crashing (:man_facepalming:)
+
+<ins>The solutions tried over the years before building this:</ins>
+- Artillery.io
+- Jmeter
+- Gatling
+
+This lib has evolved from being a measly node.js script to a somewhat good (hopefully) tool to test websocket applications. Suggestions / PRs / Questions welcome!
+
+---
+
 ## To Do:
-- Support for yaml
+- Tests
 - Support for custom reporter
 - Context from app responses to be used in messages
 
