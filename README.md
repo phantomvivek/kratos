@@ -36,10 +36,11 @@ The JSON test config ([sample config](https://github.com/phantomvivek/kratos/blo
 * tests: An array of objects with each object containing a test for the connection made to the app
   * type: Can have the below possible values:
     * "message": To send a message
-    * "sleep": Not do anything for a particular duration (only works with the duration argument)
+    * "sleep": Not do anything for a particular duration (only works with the `duration` argument)
     * "disconnect": To disconnect the socket connection to the app
   * send: When type is "message", the message to send. Can use variables from a CSV file (see dataFile variable). The index of the columns in CSV will be used as variables, like ${0}, ${1} & so on. For forming a message, only the same data row will be used, no two data rows will contribute towards forming the same message.
   * replace: Boolean value, in case you don't want to replace constants in "send" string, in case you want to use template variables in a message as is.
+  * duration: Sleep duration (in seconds; only works with `type: 'sleep'`)
 
 
 * dataFile: The path to the CSV file to use for data in the messages in tests. A connection will use data from only a single row for its `tests`
