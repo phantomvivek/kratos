@@ -30,7 +30,7 @@ The JSON test config ([sample config](https://github.com/phantomvivek/kratos/blo
 * hitrate: An array of objects with each object containing the below keys:
   * duration: Duration for this step to be run, in seconds
   * end: The number of connections per second to end with at the end of duration.
-  -- See example config for more info on how this works
+  -- See the `API Example` section for more info on how this works
 
 
 * tests: An array of objects with each object containing a test for the connection made to the app
