@@ -99,6 +99,10 @@ func (d *DataHandler) ConstructDataConfig(message json.RawMessage) []*models.Tes
 //PrepareTestData prepares the test data for each test
 func (d *DataHandler) PrepareTestData(file string, connCount int, tests []*models.Test) int {
 
+	if file == "" {
+		return 0
+	}
+
 	//Get file data
 	data, err := d.GetCSVData(file, connCount)
 	if err != nil {
