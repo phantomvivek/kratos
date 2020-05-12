@@ -1,4 +1,4 @@
-let WebSocketServer = require('uws').Server;
+let WebSocketServer = require('ws').Server;
 let express = require('express')
 let http = require('http')
 let connectCount = 0;
