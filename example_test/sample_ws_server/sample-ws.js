@@ -21,7 +21,12 @@ function Connect(ws) {
     console.log(`\nConnection opened: ${socketId}`)
 
     ws.on('message', (msg) => {
-        console.log(`Message on socket ${socketId}: ${msg}`)
+        try {
+            msg = JSON.parse(msg);
+        } catch (e) {
+            console.error("JSON Parsing error", e);
+        }
+        console.log(`Message on socket ${socketId}:`, msg)
     });
     ws.on('close', () => {
         connectCount--;

@@ -22,6 +22,11 @@
     },
     {
         "type": "message",
+        "send": {"a":1,"b":2,"messageType":"JSON ${0}"},
+        "replace": true
+    },
+    {
+        "type": "message",
         "send": "Strings in this message won't be replaced! ${1} and ${2}"
     },
     {
