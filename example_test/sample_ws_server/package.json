@@ -9,7 +9,7 @@
   "author": "Vivek",
   "license": "ISC",
   "dependencies": {
-    "express": "^4.17.1",
+    "express": "^4.21.0",
     "ws": "^7.3.0"
   }
 }
